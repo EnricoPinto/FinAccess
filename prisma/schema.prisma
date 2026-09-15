@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                  String        @id @default(uuid())
+  name                String
+  email               String        @unique
+  password            String
+  monthlyIncome       Float         @default(45000)
+  age                 Int           @default(22)
+  existingObligations Float         @default(0)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  transactions        Transaction[]
+  goals               Goal[]
+  emiEntries          EmiEntry[]
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String   // "INCOME" | "EXPENSE"
+  category        String   // "Rent", "Food & Dining", "Transport", "Discretionary", "Utilities", "Salary", "Freelance", "Savings"
+  amount          Float
+  date            DateTime @default(now())
+  description     String?
+  isDiscretionary Boolean  @default(false)
+  source          String   @default("manual") // "manual" | "screenshot"
+  ocrConfidence   String?  // "high" | "medium" | "low" | null
+  rawOcrText      String?  // stores the original extracted text for debugging/audit
+  createdAt       DateTime @default(now())
+}
+
+model Goal {
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  targetAmount        Float
+  currentAmount       Float     @default(0)
+  targetDate          DateTime?
+  monthlyContribution Float     @default(2500)
+  category            String    @default("General") // "Emergency Fund", "Purchase", "Education", "Gadget"
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model LoanProduct {
+  id              String   @id @default(uuid())
+  name            String
+  category        String   // "Personal Loan", "Education Loan", "Two-Wheeler Loan", "Micro-Business Loan"
+  minInterestRate Float
+  maxInterestRate Float
+  minIncome       Float
+  maxAmount       Float
+  tenureMonths    Int
+  provider        String
+  description     String
+  createdAt       DateTime @default(now())
+}
+
+model LiteracyModule {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  title           String
+  category        String   // "Budgeting", "Credit & Loans", "Emergency Funds", "Savings"
+  summary         String
+  content         String
+  keyTakeaways    String   // JSON string of bullet points
+  readTimeMinutes Int      @default(3)
+  createdAt       DateTime @default(now())
+}
+
+model EmiEntry {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String   // e.g. "Personal Loan - HDFC", "Credit Card - ICICI"
+  type                String   // "emi" | "credit_card"
+  principalAmount     Float?
+  interestRate        Float?
+  tenureMonths        Int?
+  monthlyInstallment  Float
+  dueDay              Int      // day of month, 1-31
+  startDate           DateTime @default(now())
+  status              String   @default("ACTIVE") // "ACTIVE" | "PAID_OFF"
+  linkedLoanProductId String?
+  createdAt           DateTime @default(now())
+}
