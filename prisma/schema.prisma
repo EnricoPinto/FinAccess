@@ -95,3 +95,10 @@ model EmiEntry {
   linkedLoanProductId String?
   createdAt           DateTime @default(now())
 }
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  source    String   @default("footer")
+  createdAt DateTime @default(now())
+}

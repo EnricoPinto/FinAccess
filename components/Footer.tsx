@@ -2,18 +2,43 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Wallet, ShieldCheck, CheckCircle2, ArrowRight } from "lucide-react";
+import { Wallet, ShieldCheck, CheckCircle2, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 
 export function Footer() {
   const [footerEmail, setFooterEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (footerEmail) {
-      setSubscribed(true);
-      setTimeout(() => setSubscribed(false), 4000);
+    if (!footerEmail) return;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: footerEmail }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to subscribe");
+      }
+
+      setStatusMessage(data.message || "Subscribed! Welcome email sent to your inbox.");
       setFooterEmail("");
+      setTimeout(() => setStatusMessage(null), 8000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Unable to subscribe. Please try again.");
+      setTimeout(() => setErrorMessage(null), 6000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -57,19 +82,34 @@ export function Footer() {
                   placeholder="username@gmail.com"
                   value={footerEmail}
                   onChange={(e) => setFooterEmail(e.target.value)}
-                  className="input-frosted w-full px-3.5 py-2 text-xs"
+                  disabled={isSubmitting}
+                  className="input-frosted w-full px-3.5 py-2 text-xs disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  className="btn-void-violet text-xs py-2 px-4 whitespace-nowrap cursor-pointer"
+                  disabled={isSubmitting}
+                  className="btn-void-violet text-xs py-2 px-4 whitespace-nowrap cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  {subscribed ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span>Subscribe</span>}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>Subscribe</span>
+                  )}
                 </button>
               </form>
-              {subscribed && (
+              {statusMessage && (
                 <p className="text-[11px] text-positiveMint mt-2 flex items-center space-x-1.5 font-mono">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Subscribed! You’ll receive monthly financial signals.</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{statusMessage}</span>
+                </p>
+              )}
+              {errorMessage && (
+                <p className="text-[11px] text-alertCoral mt-2 flex items-center space-x-1.5 font-mono">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{errorMessage}</span>
                 </p>
               )}
             </div>
