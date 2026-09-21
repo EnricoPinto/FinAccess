@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import {
   Camera,
   Upload,
@@ -188,9 +189,9 @@ export function ScreenshotUpload({ isOpen, onClose, onParsed }: ScreenshotUpload
         )}
 
         {/* Privacy & security badge */}
-        <div className="flex items-center space-x-1 pt-2 border-t border-glassEdge text-[11px] font-mono text-fogVeil">
-          <ShieldCheck className="w-3.5 h-3.5 text-blueprintBlue" />
-          <span>Private & secure • Server-side OCR processing</span>
+        <div className="flex items-center space-x-1.5 pt-2 border-t border-glassEdge text-[11px] font-mono text-fogVeil">
+          <ShieldCheck className="w-3.5 h-3.5 text-positiveMint flex-shrink-0" />
+          <span>In-memory OCR • Images never stored on disk • <Link href="/privacy" className="text-frostGlow hover:underline">Privacy Policy</Link></span>
         </div>
       </div>
     </div>

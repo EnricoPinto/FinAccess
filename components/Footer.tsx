@@ -152,7 +152,11 @@ export function Footer() {
                 </li>
                 <li><span>No Hard Bureau Pulls</span></li>
                 <li><span>Zero Sponsor Bias</span></li>
-                <li><span>Local Client Privacy</span></li>
+                <li>
+                  <Link href="/privacy" className="hover:text-pureWhite transition-colors flex items-center space-x-1">
+                    <span>Local Client Privacy</span>
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -162,9 +166,13 @@ export function Footer() {
         <div className="mt-12 pt-6 border-t border-glassEdge flex flex-col sm:flex-row items-center justify-between text-[11px] text-fogVeil gap-4">
           <p>© 2026 FinAccess. Built for the DPUIX-FSD Financial Inclusion Initiative.</p>
           <div className="flex items-center space-x-6">
-            <span className="hover:text-moonMist transition-colors cursor-pointer">Privacy Protocol</span>
-            <span className="hover:text-moonMist transition-colors cursor-pointer">Security Standards</span>
-            <span className="hover:text-moonMist transition-colors cursor-pointer">AuthKit Architecture</span>
+            <Link href="/privacy" className="hover:text-moonMist transition-colors">
+              Privacy Protocol
+            </Link>
+            <Link href="/privacy" className="hover:text-moonMist transition-colors">
+              Security Standards
+            </Link>
+            <span className="text-fogVeil/80">AuthKit Architecture</span>
           </div>
         </div>
       </div>
