@@ -3,34 +3,17 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const DEFAULT_USER_ID = "default-user-my-finances";
-
-async function getTargetUserId(session: any) {
-  let userId = (session?.user as any)?.id;
-  if (!userId) {
-    let user = await prisma.user.findUnique({
-      where: { id: DEFAULT_USER_ID },
-    });
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          id: DEFAULT_USER_ID,
-          name: "My Finances",
-          email: "user@finaccess.local",
-          password: "password123",
-          monthlyIncome: 0,
-        },
-      });
-    }
-    userId = user.id;
-  }
-  return userId;
+async function getAuthenticatedUserId() {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
+  if (!userId) return null;
+  return userId as string;
 }
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = await getTargetUserId(session);
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const transactions = await prisma.transaction.findMany({
       where: { userId },
@@ -45,8 +28,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = await getTargetUserId(session);
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { type, category, amount, description, isDiscretionary, source, ocrConfidence, rawOcrText, date } = body;
@@ -82,8 +65,8 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = await getTargetUserId(session);
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { id, type, category, amount, description, isDiscretionary, source, ocrConfidence, rawOcrText, date } = body;
@@ -123,12 +106,13 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    const userId = await getTargetUserId(session);
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    if (!id || !userId) {
+    if (!id) {
       return NextResponse.json({ error: "Missing transaction ID" }, { status: 400 });
     }
 
@@ -141,4 +125,3 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

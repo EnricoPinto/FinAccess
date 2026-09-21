@@ -3,48 +3,20 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const DEFAULT_USER_ID = "default-user-my-finances";
-
-async function getOrCreateDefaultUser() {
-  let user = await prisma.user.findUnique({
-    where: { id: DEFAULT_USER_ID },
-  });
-
-  if (!user) {
-    user = await prisma.user.findUnique({
-      where: { email: "user@finaccess.local" },
-    });
-  }
-
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        id: DEFAULT_USER_ID,
-        name: "My Finances",
-        email: "user@finaccess.local",
-        password: "password123",
-        monthlyIncome: 0,
-        age: 24,
-        existingObligations: 0,
-      },
-    });
-  }
-  return user;
+async function getAuthenticatedUserId() {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
+  if (!userId) return null;
+  return userId as string;
 }
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    let userId = (session?.user as any)?.id;
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    let user;
-    if (userId) {
-      user = await prisma.user.findUnique({ where: { id: userId } });
-    }
-
-    if (!user) {
-      user = await getOrCreateDefaultUser();
-    }
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     return NextResponse.json({ user });
   } catch (error: any) {
@@ -54,22 +26,19 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    let userId = (session?.user as any)?.id;
-    const body = await req.json();
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!userId) {
-      const user = await getOrCreateDefaultUser();
-      userId = user.id;
-    }
+    const body = await req.json();
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        name: body.name || "My Finances",
-        monthlyIncome: Math.max(Number(body.monthlyIncome) || 0, 0),
-        age: Math.max(Number(body.age) || 24, 18),
-        existingObligations: Math.max(Number(body.existingObligations) || 0, 0),
+        name: body.name || undefined,
+        monthlyIncome: body.monthlyIncome !== undefined ? Math.max(Number(body.monthlyIncome) || 0, 0) : undefined,
+        age: body.age !== undefined ? Math.max(Number(body.age) || 18, 18) : undefined,
+        existingObligations:
+          body.existingObligations !== undefined ? Math.max(Number(body.existingObligations) || 0, 0) : undefined,
       },
     });
 

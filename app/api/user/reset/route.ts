@@ -3,24 +3,23 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const DEFAULT_USER_ID = "default-user-my-finances";
-
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    const userId = (session?.user as any)?.id || DEFAULT_USER_ID;
+    const userId = (session?.user as any)?.id;
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Delete transactions & goals scoped to target user
+    // Delete all user data scoped to this account only
     await prisma.transaction.deleteMany({ where: { userId } });
     await prisma.goal.deleteMany({ where: { userId } });
+    await prisma.emiEntry.deleteMany({ where: { userId } });
 
-    // Reset user financial parameters
-    await prisma.user.updateMany({
+    // Reset user financial parameters to defaults
+    await prisma.user.update({
       where: { id: userId },
       data: {
-        name: "My Finances",
         monthlyIncome: 0,
-        age: 24,
+        age: 22,
         existingObligations: 0,
       },
     });

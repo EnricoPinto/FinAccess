@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -27,6 +29,7 @@ import { ScrollReveal } from "@/components/motion/ScrollReveal";
 
 export default function Home() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [heroEmail, setHeroEmail] = useState("");
   const [activeStep, setActiveStep] = useState(1);
   const [selectedGoalOption, setSelectedGoalOption] = useState("emergency");
@@ -34,8 +37,10 @@ export default function Home() {
 
   const handleHeroEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    // Pre-fill the email on the auth page via query param
+    router.push(`/auth?email=${encodeURIComponent(heroEmail)}`);
   };
+
 
   const fannedGoals = [
     {
@@ -125,21 +130,29 @@ export default function Home() {
                 </button>
               </form>
               <p className="text-[11px] text-fogVeil mt-2.5 text-center font-mono">
-                No account required • Instant local client-side calculation
+                Free account • Your data stays private and isolated
               </p>
+
             </div>
 
-            {/* Action Row Pairing: Primary Void Violet CTA + Ghost Pill Button */}
             <div className="flex items-center justify-center gap-4 pt-2">
-              <Link href="/dashboard" className="btn-void-violet text-xs py-2.5 px-6 cursor-pointer">
-                <span>Explore Health Engine</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {session ? (
+                <Link href="/dashboard" className="btn-void-violet text-xs py-2.5 px-6 cursor-pointer">
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <Link href="/auth" className="btn-void-violet text-xs py-2.5 px-6 cursor-pointer">
+                  <span>Get Started Free</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
               <Link href="/literacy" className="btn-pill inline-flex items-center space-x-1.5 cursor-pointer">
                 <span>3-Min Explainer Cards</span>
                 <ChevronRight className="w-3.5 h-3.5 text-fogVeil" />
               </Link>
             </div>
+
           </ScrollReveal>
         </div>
       </section>
